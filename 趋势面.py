@@ -6,33 +6,34 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-# 读取Excel文件，指定工作表和列
-df = pd.read_excel('rD:\Geo_Data\趋势面.xlsx', sheet_name='Sheet1', usecols=['x', 'y', 'z'])
-print(df)
+df = pd.read_excel('趋势面.xlsx', usecols=['x', 'y', 'z'])
 
-# 添加一列全为1的常数列
-df['const'] = 1
+# 提取x、y和z列
+x = df['x'].values
+y = df['y'].values
+z = df['z'].values
 
-# 构造设计矩阵X和响应变量向量Y
-X = df[['x', 'y', 'const']]
-Y = df['z']
+# 构造A矩阵
+A = np.vstack([x, y, np.ones(len(x))]).T
 
-# 求解线性回归系数
-beta = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(Y)
+# 使用最小二乘法拟合线性趋势面模型
+m, n, c = np.linalg.lstsq(A, z, rcond=None)[0]
 
-# 构造平面方程
-xx, yy = np.meshgrid(np.linspace(df['x'].min(), df['x'].max(), 100),
-                     np.linspace(df['y'].min(), df['y'].max(), 100))
-zz = beta[0]*xx + beta[1]*yy + beta[2]
+# 显示结果
+print("一次趋势面方程为: z = {}x + {}y + {}".format(m, n, c))
 
-# 绘制3D趋势面图
+# 生成网格点数据
+xx, yy = np.meshgrid(np.linspace(x.min(), x.max(), 10), np.linspace(y.min(), y.max(), 10))
+zz = m * xx + n * yy + c
+
+# 绘制3D图像
 fig = plt.figure()
 ax = Axes3D(fig)
-surf = ax.plot_surface(xx, yy, zz, cmap='jet')
-fig.colorbar(surf, shrink=0.5, aspect=5)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('z')
+ax.plot_surface(xx, yy, zz, rstride=1, cstride=1, cmap='jet', alpha=0.8)
+ax.scatter(x, y, z, c='black', s=30)
 plt.show()
